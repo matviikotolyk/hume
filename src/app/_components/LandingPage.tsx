@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { Button } from "@radix-ui/themes";
+import { VoiceProvider } from "@humeai/voice-react";
+import ChatHistory from "./ChatHistory";
+import Messages from "./Messages";
+import Controls from "./Controls";
 
 interface LandingPageProps {
   accessToken: string;
@@ -24,7 +26,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
   }, []);
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-t from-[#FED8B1] to-[#FCCAC4]">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-t from-[#FED8B1] to-[#FCCAC4] py-16">
       <div
         className="pointer-events-none fixed inset-0"
         style={{
@@ -34,11 +36,16 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
       <h1 className="z-10 mb-8 text-4xl font-bold text-gray-800">
         Welcome to Your Mental Health Coach
       </h1>
-      <Link href="/voice" passHref>
-        <Button className="bg-[#FDD2C5] text-gray-800 hover:bg-[#FCC3B4]">
-          Start Voice Session
-        </Button>
-      </Link>
+      <div className="z-20 flex w-full flex-col items-center justify-center">
+        <VoiceProvider
+          auth={{ type: "accessToken", value: accessToken }}
+          configId="a4f9ef27-e28e-470f-81f4-d815d0437195"
+        >
+          <Messages />
+          <Controls />
+        </VoiceProvider>
+        <ChatHistory />
+      </div>
     </div>
   );
 };

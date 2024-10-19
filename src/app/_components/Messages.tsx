@@ -1,32 +1,51 @@
-"use client";
+import React from "react";
 import { useVoice } from "@humeai/voice-react";
-import { ScrollArea } from "@radix-ui/themes";
+import { ScrollArea, Card, Flex, Text, Box } from "@radix-ui/themes";
 
 export default function Messages() {
   const { messages } = useVoice();
 
   return (
-    <ScrollArea className="h-[400px] w-full rounded-md border border-gray-200 p-4">
-      {messages.map((msg, index) => {
-        if (msg.type === "user_message" || msg.type === "assistant_message") {
-          const isUser = msg.message.role === "user";
-          return (
-            <div key={msg.type + index} className={`mb-4 ${isUser ? "text-right" : "text-left"}`}>
-              <div className="mb-1 text-sm font-semibold text-gray-600">
-                {isUser ? "You" : "Assistant"}
-              </div>
-              <div
-                className={`inline-block rounded-lg p-3 ${
-                  isUser ? "bg-[#FDD2C5]" : "bg-[#FED8B1]"
-                } text-gray-800`}
-              >
-                {msg.message.content}
-              </div>
-            </div>
-          );
-        }
-        return null;
-      })}
-    </ScrollArea>
+    <Box className="w-1/2 rounded-md border border-[#FCCAC4] bg-white p-4">
+      <ScrollArea
+        type="always"
+        scrollbars="vertical"
+        autoFocus
+        style={{ height: "400px" }}
+      >
+        <Flex direction="column" gap="3">
+          {messages.length === 0 && (
+            <Text>Press "Start Conversation" to talk to EVI</Text>
+          )}
+          {messages.map((msg, index) => {
+            if (
+              msg.type === "user_message" ||
+              msg.type === "assistant_message"
+            ) {
+              const isUser = msg.type === "user_message";
+              return (
+                <Card
+                  key={msg.type + index}
+                  style={{
+                    backgroundColor: isUser ? "#FED8B1" : "#FCCAC4",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <Flex direction="column" gap="2">
+                    <Text weight="bold" style={{ color: "#4A2B0F" }}>
+                      {isUser ? "User" : "Assistant"}
+                    </Text>
+                    <Text style={{ color: "#3D2409" }}>
+                      {msg.message.content}
+                    </Text>
+                  </Flex>
+                </Card>
+              );
+            }
+            return null;
+          })}
+        </Flex>
+      </ScrollArea>
+    </Box>
   );
 }

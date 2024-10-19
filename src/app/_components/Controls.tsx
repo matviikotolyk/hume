@@ -1,48 +1,61 @@
-"use client";
+import React, { useState } from "react";
 import { useVoice, VoiceReadyState } from "@humeai/voice-react";
 import { Button } from "@radix-ui/themes";
-import { useState } from "react";
-
+import { Mic, MicOff } from "lucide-react";
 export default function Controls() {
-  const { connect, disconnect, readyState } = useVoice();
-  const [error, setError] = useState<string | null>(null);
+  const { connect, disconnect, isMuted, mute, unmute, readyState } = useVoice();
+  const [error, setError] = useState("");
 
   const handleConnect = () => {
     connect()
       .then(() => {
-        setError(null);
+        setError("");
       })
       .catch((err) => {
         setError("Failed to connect. Please try again.");
-        console.error(err);
       });
   };
 
-  const handleDisconnect = () => {
-    disconnect();
-    setError(null);
-  };
-
-  if (readyState === VoiceReadyState.OPEN) {
-    return (
-      <Button
-        onClick={handleDisconnect}
-        className="bg-red-500 text-white hover:bg-red-600"
-      >
-        End Session
-      </Button>
-    );
-  }
-
   return (
-    <div>
-      <Button
-        onClick={handleConnect}
-        className="bg-[#FDD2C5] text-gray-800 hover:bg-[#FCC3B4]"
-      >
-        Start Session
-      </Button>
-      {error && <div className="mt-2 text-sm text-red-500">{error}</div>}
+    <div className="flex flex-row items-center gap-4 py-8">
+      {readyState === VoiceReadyState.OPEN ? (
+        <>
+          {!isMuted ? (
+            <Button
+              onClick={mute}
+              variant="surface"
+              className="bg-[#FCCAC4] text-[#4A2B0F] hover:cursor-pointer hover:bg-[#FBA69F]"
+            >
+              <MicOff className="mr-2 h-4 w-4" /> Mute
+            </Button>
+          ) : (
+            <Button
+              onClick={unmute}
+              variant="surface"
+              className="bg-[#FCCAC4] text-[#4A2B0F] hover:cursor-pointer hover:bg-[#FBA69F]"
+            >
+              <Mic className="mr-2 h-4 w-4" /> Unmute
+            </Button>
+          )}
+          <Button
+            onClick={disconnect}
+            variant="solid"
+            className="bg-[#FCCAC4] text-[#4A2B0F] hover:cursor-pointer hover:bg-[#FBA69F]"
+          >
+            End Conversation
+          </Button>
+        </>
+      ) : (
+        <Button
+          onClick={handleConnect}
+          variant="outline"
+          className="bg-[#FED8B1] text-[#4A2B0F] hover:cursor-pointer hover:bg-[#FDCB9B]"
+        >
+          Start Conversation
+        </Button>
+      )}
+
+      {error && <div>error</div>}
     </div>
   );
 }
