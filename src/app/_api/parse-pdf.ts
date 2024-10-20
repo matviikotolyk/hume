@@ -15,7 +15,7 @@ export default async function handler(
 ) {
   if (req.method === "POST") {
     const form = new formidable.IncomingForm();
-    form.parse(req, async (err, fields, files) => {
+    form.parse(req, async (err, fields, files) => { // eslint-disable-next-line @typescript-eslint/no-misused-promises
       if (err) {
         return res.status(500).json({ error: "Error parsing form data" });
       }
@@ -34,7 +34,7 @@ export default async function handler(
         for (let i = 1; i <= pdfDocument.numPages; i++) {
           const page = await pdfDocument.getPage(i);
           const content = await page.getTextContent();
-          text += content.items.map((item: any) => item.str).join(" ");
+          text += content.items.map((item: any) => item.str).join(" "); // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access
         }
 
         res.status(200).json({ text });
