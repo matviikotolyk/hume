@@ -2,10 +2,17 @@ import React, { useEffect } from "react";
 import { useVoice } from "@humeai/voice-react";
 import { ScrollArea, Card, Flex, Text, Box, Badge } from "@radix-ui/themes";
 
-export default function Messages() {
-  interface EmotionScores {
-    [key: string]: number;
-  }
+interface MessageProps {
+  pdfContent: string | null;
+}
+
+export default function Messages({ pdfContent }: MessageProps) {
+  useEffect(() => {
+    if (pdfContent) {
+      console.log("pdfContent", pdfContent);
+    }
+  });
+  interface EmotionScores extends Record<string, number> {} //eslint-disable-line @typescript-eslint/no-empty-object-type
 
   const { messages, resumeAssistant, pauseAssistant } = useVoice();
 
@@ -23,7 +30,7 @@ export default function Messages() {
     | "gray";
 
   const getBadgeColor = (prosodyType: string): RadixColor => {
-    const colorMap: { [key: string]: RadixColor } = {
+    const colorMap: Record<string, RadixColor> = {
       interest: "blue",
       excitement: "green",
       calmness: "violet",
@@ -36,16 +43,16 @@ export default function Messages() {
       relief: "red",
       // Add more mappings as needed
     };
-    return colorMap[prosodyType] || "gray";
+    return colorMap[prosodyType] ?? "gray";
   };
 
-  const getTopProsodyScores = (scores: EmotionScores | {}) => {
-    return Object.entries(scores as { [key: string]: number })
+  const getTopProsodyScores = (scores: EmotionScores | {}) => { //eslint-disable-line @typescript-eslint/no-empty-object-type
+    return Object.entries(scores as { [key: string]: number }) //eslint-disable-line @typescript-eslint/consistent-indexed-object-style
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
       .map(([type, score]) => ({
         type,
-        score: (score as number).toFixed(2),
+        score: score.toFixed(2),
       }));
   };
 
@@ -69,7 +76,7 @@ export default function Messages() {
       >
         <Flex direction="column" gap="3">
           {messages.length === 0 && (
-            <Text>Press "Start Conversation" to talk to EVI</Text>
+            <Text>Press &apos;Start Conversation&apos; to talk to EVI</Text>
           )}
           {messages.map((msg, index) => {
             if (
@@ -78,7 +85,7 @@ export default function Messages() {
             ) {
               const isUser = msg.type === "user_message";
               const topScores = getTopProsodyScores(
-                msg.models?.prosody?.scores || {},
+                msg.models?.prosody?.scores ?? {},
               );
               return (
                 <Card

@@ -7,7 +7,7 @@ interface ReturnChat {
   endTimestamp: number;
   eventCount: number;
   id: string;
-  metadata: any;
+  metadata: any; // eslint-disable-line @typescript-eslint/no-explicit-any
   startTimestamp: number;
   status: string;
   tag: string | null;
@@ -67,7 +67,7 @@ export function useChatHistory() {
       }
     }
 
-    fetchChatHistory();
+    fetchChatHistory(); //eslint-disable-line @typescript-eslint/no-floating-promises
   }, []);
 
   return { chatHistory, isLoading, error };

@@ -11,7 +11,7 @@ export default function Controls() {
       .then(() => {
         setError("");
       })
-      .catch((err) => {
+      .catch((_err) => {
         setError("Failed to connect. Please try again.");
       });
   };

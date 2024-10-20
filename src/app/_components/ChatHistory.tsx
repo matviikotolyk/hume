@@ -19,26 +19,25 @@ export default function ChatHistory() {
         style={{ height: "200px" }}
       >
         <Flex direction="column" gap="3">
-          {chatHistory &&
-            chatHistory?.map((chat) => (
-              <Card
-                key={chat.id}
-                style={{
-                  backgroundColor: "#FCCAC4",
-                  marginBottom: "8px",
-                }}
-              >
-                <Flex direction="column" gap="2">
-                  <Text weight="bold" style={{ color: "#4A2B0F" }}>
-                    Chat ID: {chat.id}
-                  </Text>
-                  <Text style={{ color: "#3D2409" }}>
-                    Created at: {new Date(chat.startTimestamp).toLocaleString()}
-                  </Text>
-                  {/* Add more chat details here as needed */}
-                </Flex>
-              </Card>
-            ))}
+          {chatHistory?.map((chat) => (
+            <Card
+              key={chat.id}
+              style={{
+                backgroundColor: "#FCCAC4",
+                marginBottom: "8px",
+              }}
+            >
+              <Flex direction="column" gap="2">
+                <Text weight="bold" style={{ color: "#4A2B0F" }}>
+                  Chat ID: {chat.id}
+                </Text>
+                <Text style={{ color: "#3D2409" }}>
+                  Created at: {new Date(chat.startTimestamp).toLocaleString()}
+                </Text>
+                {/* Add more chat details here as needed */}
+              </Flex>
+            </Card>
+          ))}
         </Flex>
       </ScrollArea>
     </Box>
