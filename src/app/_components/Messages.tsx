@@ -1,20 +1,19 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useVoice } from "@humeai/voice-react";
 import { ScrollArea, Card, Flex, Text, Box, Badge } from "@radix-ui/themes";
+import { UploadedFile } from "./LandingPage";
 
 interface MessageProps {
-  pdfContent: string | null;
+  selectedFile: UploadedFile | null;
 }
 
-export default function Messages({ pdfContent }: MessageProps) {
-  useEffect(() => {
-    if (pdfContent) {
-      console.log("pdfContent", pdfContent);
-    }
-  });
-  interface EmotionScores extends Record<string, number> {} //eslint-disable-line @typescript-eslint/no-empty-object-type
+export default function Messages({ selectedFile }: MessageProps) {
+  interface EmotionScores extends Record<string, number> {}
 
   const { messages, resumeAssistant, pauseAssistant } = useVoice();
+  const [contextSent, setContextSent] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
   type RadixColor =
     | "blue"
@@ -41,13 +40,12 @@ export default function Messages({ pdfContent }: MessageProps) {
       pride: "indigo",
       love: "crimson",
       relief: "red",
-      // Add more mappings as needed
     };
     return colorMap[prosodyType] ?? "gray";
   };
 
-  const getTopProsodyScores = (scores: EmotionScores | {}) => { //eslint-disable-line @typescript-eslint/no-empty-object-type
-    return Object.entries(scores as { [key: string]: number }) //eslint-disable-line @typescript-eslint/consistent-indexed-object-style
+  const getTopProsodyScores = (scores: EmotionScores | {}) => {
+    return Object.entries(scores as { [key: string]: number })
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
       .map(([type, score]) => ({
@@ -56,27 +54,49 @@ export default function Messages({ pdfContent }: MessageProps) {
       }));
   };
 
-  useEffect(() => {
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.type === "assistant_message") {
-      pauseAssistant();
-      setTimeout(() => {
-        resumeAssistant();
-      }, 10000);
+  const scrollToBottom = () => {
+    const scrollArea = scrollAreaRef.current;
+    if (scrollArea && shouldAutoScroll) {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
     }
-  }, [messages, pauseAssistant, resumeAssistant]);
+  };
+
+  useEffect(() => {
+    const intervalId = setInterval(scrollToBottom, 500); // Check every half second
+
+    return () => clearInterval(intervalId); // Clean up on unmount
+  }, [shouldAutoScroll]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleScroll = () => {
+    const scrollArea = scrollAreaRef.current;
+    if (scrollArea) {
+      const isNearBottom =
+        scrollArea.scrollHeight - scrollArea.scrollTop <=
+        scrollArea.clientHeight + 100; // 100px threshold
+      setShouldAutoScroll(isNearBottom);
+    }
+  };
 
   return (
-    <Box className="w-1/2 rounded-md border border-[#FCCAC4] bg-white p-4">
+    <Box className="rounded-md bg-[#F5F5F5] p-4">
       <ScrollArea
         type="always"
         scrollbars="vertical"
-        autoFocus
         style={{ height: "400px" }}
+        ref={scrollAreaRef}
+        onScroll={handleScroll}
       >
         <Flex direction="column" gap="3">
           {messages.length === 0 && (
-            <Text>Press &apos;Start Conversation&apos; to talk to EVI</Text>
+            <Text weight={"light"}>
+              Select a journal entry if you want to chat about it or simply
+              click Start Conversation if you want to chat with EVI or do a
+              guided meditation session.
+            </Text>
           )}
           {messages.map((msg, index) => {
             if (

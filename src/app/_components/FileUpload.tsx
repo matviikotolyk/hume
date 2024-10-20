@@ -1,22 +1,37 @@
 import React, { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { Box, Text, Button } from "@radix-ui/themes";
+import pdfToText from "react-pdftotext";
 
 interface FileUploadProps {
-  onFileUploaded: (file: File) => void;
+  onFileProcessed: (name: string, content: string) => void;
 }
 
-export default function FileUpload({ onFileUploaded }: FileUploadProps) {
+export default function FileUpload({ onFileProcessed }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const processFile = async (file: File) => {
+    setIsProcessing(true);
+    try {
+      const text = await pdfToText(file);
+      onFileProcessed(file.name, text);
+    } catch (error) {
+      console.error("Failed to extract text from pdf", error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles[0]) {
         setFile(acceptedFiles[0]);
-        onFileUploaded(acceptedFiles[0]);
+        processFile(acceptedFiles[0]);
       }
     },
-    [onFileUploaded],
+    [onFileProcessed],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -37,10 +52,18 @@ export default function FileUpload({ onFileUploaded }: FileUploadProps) {
           </Text>
         )}
       </div>
-      {file && <Text className="mt-2">File uploaded: {file.name}</Text>}
+      {file && (
+        <Text weight={"medium"} style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+          File uploaded: {file.name}
+        </Text>
+      )}
+      {isProcessing && <Text className="mt-2">Processing file...</Text>}
       <Button
-        className="mt-4"
+        color="blue"
+        style={{ marginTop: "1rem" }}
+        className="hover:cursor-pointer"
         onClick={() => document.querySelector("input")?.click()}
+        disabled={isProcessing}
       >
         Select File
       </Button>

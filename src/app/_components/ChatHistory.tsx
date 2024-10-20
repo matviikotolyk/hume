@@ -9,8 +9,8 @@ export default function ChatHistory() {
   if (error) return <Text color="red">Error: {error}</Text>;
 
   return (
-    <Box className="w-1/2 rounded-md border border-[#FCCAC4] bg-[#FED8B1]/10 p-4">
-      <Heading size="4" mb="2">
+    <Box className="w-1/2 rounded-md border border-gray-300 bg-[#FED8B1]/10 p-2 text-white">
+      <Heading size="4" className="text-[#353535]" mb="2">
         Chat History
       </Heading>
       <ScrollArea

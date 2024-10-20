@@ -1,21 +1,32 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { VoiceProvider } from "@humeai/voice-react";
-import { useDropzone } from "react-dropzone";
 import ChatHistory from "./ChatHistory";
 import Messages from "./Messages";
 import Controls from "./Controls";
+import FileUpload from "./FileUpload";
+import FileManager from "./FileManager";
+import SearchResults from "./SearchResults";
 import Groq from "groq-sdk";
+import { Box, Flex } from "@radix-ui/themes";
 
 interface LandingPageProps {
   accessToken: string;
 }
 
+export interface UploadedFile {
+  name: string;
+  content: string;
+  analysis: string;
+}
+
 const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [pdfContent, setPdfContent] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -29,90 +40,112 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
     };
   }, []);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    setIsLoading(true);
-    const file = acceptedFiles[0];
-    if (file?.type === "application/pdf") {
-      try {
-        const text = await extractTextFromPDF(file);
-        const analysis = await analyzeTextWithGroq(text);
-        setPdfContent(analysis);
-      } catch (error) {
-        console.error("Error processing PDF:", error);
-        // Handle error (e.g., show error message to user)
-      }
-    } else {
-      // Handle non-PDF file
-      console.error("Please upload a PDF file");
-    }
-    setIsLoading(false);
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop }); //eslint-disable-line @typescript-eslint/no-misused-promises
-
-  const extractTextFromPDF = async (file: File): Promise<string> => {
-    // Implement PDF text extraction here
-    // For this example, we'll just return the file name as a placeholder
-    return `Content of ${file.name}`;
-  };
-
   const analyzeTextWithGroq = async (text: string): Promise<string> => {
     const groq = new Groq({
       apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
       dangerouslyAllowBrowser: true,
     });
-    const chatCompletion = await groq.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an AI trained to analyze journal entries for emotional sentiment. Provide a brief summary of the emotional state conveyed in the text.",
-        },
-        {
-          role: "user",
-          content: text,
-        },
-      ],
-      model: "llama3-8b-8192",
-    });
-    return chatCompletion.choices[0]?.message?.content ?? "";
+
+    const chunkSize = 4000;
+    const chunks = [];
+
+    for (let i = 0; i < text.length; i += chunkSize) {
+      chunks.push(text.slice(i, i + chunkSize));
+    }
+
+    let fullAnalysis = "";
+
+    for (const chunk of chunks) {
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an AI trained to analyze journal entries for emotional sentiment. Provide a brief summary of the emotional state conveyed in the text.",
+          },
+          {
+            role: "user",
+            content: chunk,
+          },
+        ],
+        model: "llama-3.1-70b-versatile",
+        max_tokens: 1000,
+      });
+
+      const analysisChunk = chatCompletion.choices[0]?.message?.content ?? "";
+      fullAnalysis += analysisChunk;
+
+      console.log("Llama model output:", analysisChunk);
+    }
+
+    return fullAnalysis;
+  };
+
+  const handleFileProcessed = async (name: string, content: string) => {
+    setIsLoading(true);
+    try {
+      const analysis = await analyzeTextWithGroq(content);
+      const newFile = { name, content, analysis };
+      setUploadedFiles((prevFiles) => [...prevFiles, newFile]);
+      setSelectedFile(newFile);
+    } catch (error) {
+      console.error("Error analyzing text:", error);
+      // Handle error (e.g., show error message to user)
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-t from-[#FED8B1] to-[#FCCAC4] py-16">
+    <div className="relative min-h-screen bg-gradient-to-t from-[#FED8B1] to-[#FCCAC4] py-16">
       <div
         className="pointer-events-none fixed inset-0"
         style={{
-          background: `radial-gradient(circle ${100}px at ${mousePosition.x}px ${mousePosition.y}px, rgba(255, 255, 255, 1), transparent 80%)`,
+          background: `radial-gradient(circle ${100}px at ${mousePosition.x}px ${mousePosition.y}px, rgba(255, 255, 255, 1), transparent 80%) z-0`,
         }}
       />
-      <h1 className="z-10 mb-8 text-4xl font-bold text-gray-800">
+      <h1 className="z-10 mb-8 text-center text-4xl font-bold text-[#353535]">
         Welcome to Your Mental Health Coach
       </h1>
-      <div className="z-20 flex w-full flex-col items-center justify-center">
-        <div
-          {...getRootProps()}
-          className="mb-4 cursor-pointer rounded border-2 border-dashed border-gray-300 p-4 text-center"
-        >
-          <input {...getInputProps()} />
-          {isDragActive ? (
-            <p>Drop the PDF file here ...</p>
-          ) : (
-            <p>
-              Drag &apos;n&apos; drop a PDF file here, or click to select a file
-            </p>
-          )}
-        </div>
-        {isLoading && <p>Processing your journal entry...</p>}
-        <VoiceProvider
-          auth={{ type: "accessToken", value: accessToken }}
-          configId="a4f9ef27-e28e-470f-81f4-d815d0437195"
-        >
-          <Messages pdfContent={pdfContent} />
-          <Controls />
-        </VoiceProvider>
+      <Flex className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Box className="w-1/4 pr-8">
+          <Box className="mb-4 rounded-md border border-gray-300 bg-[#F5F5F5] p-4">
+            <FileUpload onFileProcessed={handleFileProcessed} />
+            {isLoading && (
+              <p className="mt-2 text-white">Analyzing your journal entry...</p>
+            )}
+          </Box>
+          <Box className="h-[calc(100vh-400px)] overflow-y-auto">
+            <FileManager
+              uploadedFiles={uploadedFiles}
+              selectedFile={selectedFile}
+              setSelectedFile={setSelectedFile}
+            />
+          </Box>
+        </Box>
+        <Box className="w-2/4 px-8">
+          <VoiceProvider
+            auth={{ type: "accessToken", value: accessToken }}
+            configId="a4f9ef27-e28e-470f-81f4-d815d0437195"
+          >
+            <Box className="mb-4 h-[calc(100vh-300px)] rounded-md border border-gray-300 bg-[#F5F5F5] p-4">
+              <Messages selectedFile={selectedFile} />
+            </Box>
+            <Box className="rounded-md bg-transparent">
+              <Controls
+                selectedFile={selectedFile}
+                onSearchResults={setSearchResults}
+              />
+            </Box>
+          </VoiceProvider>
+        </Box>
+        <Box className="w-1/4 pl-8">
+          <SearchResults results={searchResults} />
+        </Box>
+      </Flex>
+      <Box className="mt-8 w-full justify-center">
         <ChatHistory />
-      </div>
+      </Box>
     </div>
   );
 };
