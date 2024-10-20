@@ -53,7 +53,10 @@ export default function FileUpload({ onFileProcessed }: FileUploadProps) {
         )}
       </div>
       {file && (
-        <Text weight={"medium"} style={{ marginTop: "1rem", marginBottom: "1rem" }}>
+        <Text
+          weight={"medium"}
+          style={{ marginTop: "1rem", marginBottom: "1rem" }}
+        >
           File uploaded: {file.name}
         </Text>
       )}

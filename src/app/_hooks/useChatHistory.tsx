@@ -1,74 +1,48 @@
 import { useState, useEffect } from "react";
-import { HumeClient } from "hume";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-interface ReturnChat {
-  chatGroupId: string;
-  config: { id: string; version: number };
-  endTimestamp: number;
-  eventCount: number;
+interface ChatHistoryItem {
   id: string;
-  metadata: any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  startTimestamp: number;
+  user_id: string;
+  chat_group_id: string;
+  start_timestamp: number;
+  end_timestamp: number | null;
+  event_count: number;
   status: string;
   tag: string | null;
 }
 
 export function useChatHistory() {
-  const [chatHistory, setChatHistory] = useState<ReturnChat[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
     async function fetchChatHistory() {
       setIsLoading(true);
       try {
-        const client = new HumeClient({
-          apiKey: process.env.NEXT_PUBLIC_HUME_API_KEY,
-        });
-        const response = await client.empathicVoice.chats.listChats({
-          pageNumber: 0,
-          pageSize: 10,
-          ascendingOrder: true,
-        });
+        const { data, error } = await supabase
+          .from("chat_history")
+          .select("*")
+          .order("start_timestamp", { ascending: false })
+          .limit(10);
 
-        if (Array.isArray(response.data)) {
-          setChatHistory(response.data as ReturnChat[]);
-        } else {
-          console.warn("Unexpected response structure:", response);
-          setChatHistory([]);
-        }
+        if (error) throw error;
 
-        if (response.data && response.data.length > 0) {
-          const chagGroupId = response.data[0]?.chatGroupId ?? "";
-          const events =
-            await client.empathicVoice.chatGroups.listChatGroupEvents(
-              chagGroupId,
-              {
-                pageNumber: 0,
-                pageSize: 10,
-                ascendingOrder: true,
-              },
-            );
-          console.log({ events });
-        }
-
-        console.log("Chat History Response:", response);
+        setChatHistory(data || []);
       } catch (err) {
         console.error("Error fetching chat history:", err);
-        if (err instanceof Error) {
-          setError(err.message);
-          console.error("Error message:", err.message);
-          console.error("Error stack:", err.stack);
-        } else {
-          setError("An unknown error occurred");
-        }
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred",
+        );
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchChatHistory(); //eslint-disable-line @typescript-eslint/no-floating-promises
-  }, []);
+    fetchChatHistory();
+  }, [supabase]);
 
   return { chatHistory, isLoading, error };
 }

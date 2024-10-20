@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Text, Button, ScrollArea } from "@radix-ui/themes";
-import { UploadedFile } from "./LandingPage";
+import type { UploadedFile } from "./LandingPage";
 
 interface FileManagerProps {
   uploadedFiles: UploadedFile[];

@@ -1,6 +1,7 @@
 import "~/styles/globals.css";
 import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
+import Providers from "./providers";
 
 import { DM_Sans } from "next/font/google";
 import { type Metadata } from "next";
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dm_sans.className}`}>
       <body>
-        <Theme>{children}</Theme>
+        <Providers>
+          <Theme>{children}</Theme>
+        </Providers>
       </body>
     </html>
   );

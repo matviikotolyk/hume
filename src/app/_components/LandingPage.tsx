@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { VoiceProvider } from "@humeai/voice-react";
 import ChatHistory from "./ChatHistory";
 import Messages from "./Messages";
@@ -9,13 +10,15 @@ import FileUpload from "./FileUpload";
 import FileManager from "./FileManager";
 import SearchResults from "./SearchResults";
 import Groq from "groq-sdk";
-import { Box, Flex } from "@radix-ui/themes";
+import { Box, Flex, Button } from "@radix-ui/themes";
+import { useRouter } from "next/navigation";
 
 interface LandingPageProps {
   accessToken: string;
 }
 
 export interface UploadedFile {
+  id?: string;
   name: string;
   content: string;
   analysis: string;
@@ -27,6 +30,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
+  const supabase = createClientComponentClient();
+  const router = useRouter();
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -39,6 +44,23 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
       window.removeEventListener("mousemove", handleMouseMove);
     };
   }, []);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      const { data, error } = await supabase
+        .from("uploaded_files")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching files:", error);
+      } else {
+        setUploadedFiles(data || []);
+      }
+    };
+
+    fetchFiles();
+  }, [supabase]);
 
   const analyzeTextWithGroq = async (text: string): Promise<string> => {
     const groq = new Groq({
@@ -84,16 +106,43 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
   const handleFileProcessed = async (name: string, content: string) => {
     setIsLoading(true);
     try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+
       const analysis = await analyzeTextWithGroq(content);
-      const newFile = { name, content, analysis };
-      setUploadedFiles((prevFiles) => [...prevFiles, newFile]);
+
+      // Store the file in Supabase
+      const { data, error } = await supabase
+        .from("uploaded_files")
+        .insert({
+          user_id: user.id,
+          name,
+          content,
+          analysis,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const newFile: UploadedFile = { id: data.id, name, content, analysis };
+      setUploadedFiles((prevFiles) => [newFile, ...prevFiles]);
       setSelectedFile(newFile);
     } catch (error) {
-      console.error("Error analyzing text:", error);
+      console.error("Error processing file:", error);
       // Handle error (e.g., show error message to user)
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/auth");
   };
 
   return (
@@ -104,9 +153,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
           background: `radial-gradient(circle ${100}px at ${mousePosition.x}px ${mousePosition.y}px, rgba(255, 255, 255, 1), transparent 80%) z-0`,
         }}
       />
-      <h1 className="z-10 mb-8 text-center text-4xl font-bold text-[#353535]">
-        Welcome to Your Mental Health Coach
-      </h1>
+      <Flex
+        justify="center"
+        gap={"4"}
+        align="center"
+        className="mb-8 px-4 sm:px-6 lg:px-8"
+      >
+        <h1 className="z-10 text-4xl font-bold text-[#353535]">
+          Welcome to Your Mental Health Coach
+        </h1>
+        <Button onClick={handleSignOut} className="hover:cursor-pointer">
+          Sign Out
+        </Button>
+      </Flex>
       <Flex className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <Box className="w-1/4 pr-8">
           <Box className="mb-4 rounded-md border border-gray-300 bg-[#F5F5F5] p-4">
