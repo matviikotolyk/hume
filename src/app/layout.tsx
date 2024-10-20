@@ -11,7 +11,7 @@ const dm_sans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Hume Therapist",
+  title: "Journova",
   description: "A therapist that uses AI to help you",
   icons: [{ rel: "icon", url: "/favicon_sun.ico" }],
 };
