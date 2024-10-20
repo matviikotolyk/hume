@@ -18,7 +18,7 @@ export default function ChatHistory() {
   if (error) return <Text color="red">Error: {error}</Text>;
 
   return (
-    <Box className="w-1/2 rounded-md border border-gray-300 bg-[#FED8B1]/10 p-2 text-white">
+    <Box className="w-full rounded-md border border-gray-300 bg-[#FED8B1]/10 p-2 text-white">
       <Flex justify="between" align="center" mb="2">
         <Heading size="4" className="text-[#353535]">
           Chat History

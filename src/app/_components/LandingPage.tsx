@@ -202,7 +202,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
           <SearchResults results={searchResults} />
         </Box>
       </Flex>
-      <Box className="mt-8 w-full justify-center">
+      <Box
+        style={{ paddingLeft: "4rem", paddingRight: "4rem" }}
+        className="mt-8 w-full justify-center"
+      >
         <ChatHistory />
       </Box>
     </div>

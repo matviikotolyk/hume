@@ -25,7 +25,7 @@ const FileManager: React.FC<FileManagerProps> = ({
               color="blue"
               onClick={() => setSelectedFile(file)}
               variant={selectedFile?.name === file.name ? "solid" : "outline"}
-              className="w-full justify-start"
+              className="w-full justify-start hover:cursor-pointer"
             >
               {file.name}
             </Button>

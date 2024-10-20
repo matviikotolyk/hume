@@ -113,11 +113,11 @@ export default function Controls({
           {
             role: "system",
             content:
-              "You are a helpful assistant that generates search queries based on conversation context.",
+              "You are a helpful assistant that generates search queries based on conversation context. When needed, you add all the relevant context like location, time, etc. to the search query.",
           },
           {
             role: "user",
-            content: `Generate a search query based on this message: "${lastAssistantMessage.message.content}"`,
+            content: `Generate a search query helpful for a user to discover more based on this message: "${lastAssistantMessage.message.content}"`,
           },
         ],
         model: "llama3-groq-70b-8192-tool-use-preview",
