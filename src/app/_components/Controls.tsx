@@ -179,9 +179,9 @@ export default function Controls({
   };
 
   return (
-    <div className="flex flex-row gap-4 py-2">
+    <div className="flex flex-col gap-2 py-2">
       {readyState === VoiceReadyState.OPEN ? (
-        <>
+        <div className="flex flex-row gap-4 py-2">
           {!isMuted ? (
             <Button
               onClick={mute}
@@ -226,13 +226,13 @@ export default function Controls({
             <Search className="mr-2 h-4 w-4" />{" "}
             {isSearching ? "Searching..." : "Web Search"}
           </Button>
-        </>
+        </div>
       ) : (
         <Flex gap="2">
           <Button
             onClick={handleConnect}
             variant="solid"
-            color="gray"
+            color="iris"
             className="text-white hover:cursor-pointer"
             disabled={isConnecting}
           >

@@ -94,8 +94,8 @@ export default function Messages({ selectedFile }: MessageProps) {
           {messages.length === 0 && (
             <Text weight={"light"}>
               Select a journal entry if you want to chat about it or simply
-              click Start Conversation if you want to chat with EVI or do a
-              guided meditation session.
+              click <b>Start Conversation</b> if you want to chat with EVI or do
+              a guided meditation session.
             </Text>
           )}
           {messages.map((msg, index) => {
