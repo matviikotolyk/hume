@@ -11,27 +11,32 @@ export default function FileUpload({ onFileProcessed }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const processFile = async (file: File) => {
-    setIsProcessing(true);
-    try {
-      const text = await pdfToText(file);
-      onFileProcessed(file.name, text);
-    } catch (error) {
-      console.error("Failed to extract text from pdf", error);
-      // You might want to show an error message to the user here
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+  const processFile = useCallback(
+    async (file: File) => {
+      setIsProcessing(true);
+      try {
+        const text = await pdfToText(file);
+        onFileProcessed(file.name, text);
+      } catch (error) {
+        console.error("Failed to extract text from pdf", error);
+        // You might want to show an error message to the user here
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [onFileProcessed],
+  );
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       if (acceptedFiles[0]) {
         setFile(acceptedFiles[0]);
-        processFile(acceptedFiles[0]);
+        processFile(acceptedFiles[0]).catch((error) => {
+          console.error("Error processing file:", error);
+        });
       }
     },
-    [onFileProcessed],
+    [processFile],
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

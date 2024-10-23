@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { User } from "@supabase/auth-helpers-nextjs";
+import type { User } from "@supabase/auth-helpers-nextjs";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,7 +28,9 @@ export default function AuthPage() {
       setUser(user);
       setLoading(false);
     };
-    getUser();
+    getUser().catch((error) => {
+      console.error("Error fetching user: ", error);
+    });
 
     const handleMouseMove = (e: MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });

@@ -14,6 +14,12 @@ import Groq from "groq-sdk";
 import { Box, Flex, Button } from "@radix-ui/themes";
 import { useRouter } from "next/navigation";
 
+interface SearchResult {
+  title: string;
+  summary: string;
+  url: string;
+}
+
 interface LandingPageProps {
   accessToken: string;
 }
@@ -30,7 +36,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const supabase = createClientComponentClient();
   const router = useRouter();
 
@@ -46,19 +52,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
     };
   }, []);
 
-  const fetchFiles = async () => {
-    const { data, error } = await supabase
-      .from("uploaded_files")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Error fetching files:", error);
-    } else {
-      setUploadedFiles(data || []);
-    }
-  };
-
   useEffect(() => {
     const fetchFiles = async () => {
       const { data, error } = await supabase
@@ -73,7 +66,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
       }
     };
 
-    fetchFiles();
+    fetchFiles().catch((error) => {
+      console.error("Error fetching files: ", error);
+      setIsLoading(false);
+    });
   }, [supabase]);
 
   const analyzeTextWithGroq = async (text: string): Promise<string> => {
@@ -130,18 +126,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
       const analysis = await analyzeTextWithGroq(content);
 
       // Store the file in Supabase
-      const { data, error } = await supabase
-        .from("uploaded_files")
-        .insert({
-          user_id: user.id,
-          name,
-          content,
-          analysis,
-        })
-        .select()
-        .single();
+      const { data, error }: { data: { id: string } | null; error: unknown } =
+        await supabase
+          .from("uploaded_files")
+          .insert({
+            user_id: user.id,
+            name,
+            content,
+            analysis,
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
+      if (error || !data) {
+        throw new Error(
+          error instanceof Error
+            ? error.message
+            : "An error occurred while storing the file.",
+        );
+      }
 
       const newFile: UploadedFile = { id: data.id, name, content, analysis };
       setUploadedFiles((prevFiles) => [newFile, ...prevFiles]);
@@ -204,7 +207,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
             <Box className="mb-4 rounded-md border border-gray-300 bg-[#F5F5F5] p-4">
               <FileUpload onFileProcessed={handleFileProcessed} />
               {isLoading && (
-                <p className="mt-2 text-white">
+                <p className="mt-2 text-blue-500">
                   Analyzing your journal entry...
                 </p>
               )}

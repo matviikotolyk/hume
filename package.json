@@ -9,6 +9,9 @@
     "lint": "next lint",
     "start": "next start"
   },
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "@ai-sdk/groq": "^0.0.1",
     "@humeai/voice": "^0.1.10",

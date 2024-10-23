@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
-import { Button } from "@radix-ui/themes";
 
 const WelcomeModal = () => {
   const [isOpen, setIsOpen] = useState(true);
@@ -22,7 +21,7 @@ const WelcomeModal = () => {
               </p>
 
               <p>
-                We're here to support your emotional wellbeing in two powerful
+                We&apos;re here to support your emotional wellbeing in two powerful
                 ways:
               </p>
 
@@ -41,7 +40,7 @@ const WelcomeModal = () => {
                     2. Journal Analysis & Conversation
                   </p>
                   <p className="ml-4 mt-1">
-                    Share your thoughts through journal entries, and we'll
+                    Share your thoughts through journal entries, and we&apos;ll
                     provide emotional insights while engaging in meaningful
                     conversations about your wellbeing.
                   </p>
@@ -65,7 +64,7 @@ const WelcomeModal = () => {
                 onClick={() => setIsOpen(false)}
                 className="rounded-2xl bg-gradient-to-r from-[#fdbdb6] to-[#f3b373] px-6 py-2 text-[#353535] outline-none transition-all hover:from-[#FBB5AC] hover:to-[#FECF9A]"
               >
-                Let's Begin
+                Let&apos;s Begin
               </button>
             </Dialog.Close>
           </div>

@@ -41,7 +41,12 @@ export function useChatHistory() {
       }
     }
 
-    fetchChatHistory();
+    fetchChatHistory().catch((error) => {
+      console.error("Error fetching chat history:", error);
+      setError(
+        error instanceof Error ? error.message : "An unknown error occurred",
+      );
+    });
   }, [supabase]);
 
   return { chatHistory, isLoading, error };

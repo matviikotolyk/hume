@@ -1,22 +1,67 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useVoice, VoiceReadyState } from "@humeai/voice-react";
 import { Button, Flex } from "@radix-ui/themes";
 import { Mic, MicOff, Send, Search } from "lucide-react";
 import Groq from "groq-sdk";
 
-interface ControlsProps {
-  selectedFile: {
-    name: string;
-    content: string;
-    analysis: string;
-  } | null;
-  onSearchResults: (results: any) => void;
+// Types
+interface SearchResult {
+  title: string;
+  summary: string;
+  url: string;
 }
+
+interface SelectedFile {
+  name: string;
+  content: string;
+  analysis: string;
+}
+
+interface ControlsProps {
+  selectedFile: SelectedFile | null;
+  onSearchResults: (results: SearchResult[]) => void;
+}
+
+interface GoogleSearchItem {
+  title: string;
+  snippet: string;
+  link: string;
+}
+
+interface GoogleSearchResponse {
+  items: GoogleSearchItem[];
+}
+
+// Helper functions
+const performGoogleSearch = async (query: string): Promise<SearchResult[]> => {
+  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY;
+  const searchEngineId = process.env.NEXT_PUBLIC_GOOGLE_SEARCH_ENGINE_ID;
+
+  if (!apiKey || !searchEngineId) {
+    throw new Error("Missing Google Search API configuration");
+  }
+
+  const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}`;
+
+  try {
+    const response = await fetch(url);
+    const data = (await response.json()) as GoogleSearchResponse;
+
+    return data.items.slice(0, 3).map((item) => ({
+      title: item.title,
+      summary: item.snippet,
+      url: item.link,
+    }));
+  } catch (error) {
+    console.error("Error performing Google search:", error);
+    throw error;
+  }
+};
 
 export default function Controls({
   selectedFile,
   onSearchResults,
-}: ControlsProps) {
+}: ControlsProps): JSX.Element {
   const {
     connect,
     disconnect,
@@ -27,24 +72,12 @@ export default function Controls({
     sendSessionSettings,
     messages,
   } = useVoice();
-  const [error, setError] = useState("");
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
 
-  const handleConnect = () => {
-    setIsConnecting(true);
-    connect()
-      .then(() => {
-        setError("");
-        setIsConnecting(false);
-      })
-      .catch((_err) => {
-        setError("Failed to connect. Please try again.");
-        setIsConnecting(false);
-      });
-  };
+  const [error, setError] = useState<string>("");
+  const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
 
-  const setSystemPrompt = () => {
+  const setSystemPrompt = useCallback(() => {
     if (!selectedFile) {
       console.log("No file selected, using default system prompt");
       return;
@@ -60,40 +93,32 @@ export default function Controls({
       },
     });
     console.log("System prompt set with journal entry analysis.");
-  };
+  }, [selectedFile, sendSessionSettings]);
 
   useEffect(() => {
     if (readyState === VoiceReadyState.OPEN) {
       setSystemPrompt();
     }
-  }, [readyState, selectedFile]);
+  }, [readyState, setSystemPrompt]);
 
-  const performGoogleSearch = async (query: string) => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SEARCH_API_KEY;
-    const searchEngineId = process.env.NEXT_PUBLIC_GOOGLE_SEARCH_ENGINE_ID;
-    const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}`;
-
+  const handleConnect = async (): Promise<void> => {
+    setIsConnecting(true);
     try {
-      const response = await fetch(url);
-      const data = await response.json();
-      return data.items.slice(0, 3).map((item: any) => ({
-        title: item.title,
-        summary: item.snippet,
-        url: item.link,
-      }));
+      await connect();
+      setError("");
+      //eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
-      console.error("Error performing Google search:", error);
-      throw error;
+      setError("Failed to connect. Please try again.");
+    } finally {
+      setIsConnecting(false);
     }
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (): Promise<void> => {
     setIsSearching(true);
     const lastAssistantMessage = messages
       .filter((msg) => msg.type === "assistant_message")
       .pop();
-
-    console.log("Last assistant message:", lastAssistantMessage);
 
     if (!lastAssistantMessage) {
       setError("No assistant message found to search for.");
@@ -101,13 +126,19 @@ export default function Controls({
       return;
     }
 
+    const groqApiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
+    if (!groqApiKey) {
+      setError("Missing Groq API configuration");
+      setIsSearching(false);
+      return;
+    }
+
     const groq = new Groq({
-      apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY,
+      apiKey: groqApiKey,
       dangerouslyAllowBrowser: true,
     });
 
     try {
-      console.log("Sending request to Groq API...");
       const chatCompletion = await groq.chat.completions.create({
         messages: [
           {
@@ -143,29 +174,22 @@ export default function Controls({
         tool_choice: "auto",
       });
 
-      console.log("Groq API response:", chatCompletion);
-
+      const toolCalls = chatCompletion.choices[0]?.message?.tool_calls;
       let searchQuery = "";
 
-      const toolCalls = chatCompletion.choices[0]?.message?.tool_calls;
-      console.log("Tool calls:", toolCalls);
-
       if (toolCalls && toolCalls.length > 0) {
-        searchQuery = JSON.parse(
-          toolCalls[0]?.function?.arguments ?? "{}",
-        ).query;
+        const args = toolCalls[0]?.function?.arguments;
+        if (args) {
+          const parsedArgs = JSON.parse(args) as { query: string };
+          searchQuery = parsedArgs.query;
+        }
       } else {
-        // If no tool calls, use the message content as the search query
         searchQuery = chatCompletion.choices[0]?.message?.content ?? "";
-        // Remove quotes if present
         searchQuery = searchQuery.replace(/^["'](.*)["']$/, "$1");
       }
 
-      console.log("Generated search query:", searchQuery);
-
       if (searchQuery) {
         const searchResults = await performGoogleSearch(searchQuery);
-        console.log("Search results:", searchResults);
         onSearchResults(searchResults);
       } else {
         setError("Generated search query is empty.");
@@ -182,24 +206,20 @@ export default function Controls({
     <div className="flex flex-col gap-2 py-2">
       {readyState === VoiceReadyState.OPEN ? (
         <div className="flex flex-row gap-4 py-2">
-          {!isMuted ? (
-            <Button
-              onClick={mute}
-              variant="surface"
-              color="ruby"
-              className="text-white hover:cursor-pointer"
-            >
-              <MicOff className="mr-2 h-4 w-4" /> Mute
-            </Button>
-          ) : (
-            <Button
-              onClick={unmute}
-              variant="surface"
-              className="text-white hover:cursor-pointer"
-            >
-              <Mic className="mr-2 h-4 w-4" /> Unmute
-            </Button>
-          )}
+          <Button
+            onClick={isMuted ? unmute : mute}
+            variant="surface"
+            color={isMuted ? "gray" : "ruby"}
+            className="text-white hover:cursor-pointer"
+          >
+            {isMuted ? (
+              <Mic className="mr-2 h-4 w-4" />
+            ) : (
+              <MicOff className="mr-2 h-4 w-4" />
+            )}
+            {isMuted ? "Unmute" : "Mute"}
+          </Button>
+
           <Button
             onClick={disconnect}
             variant="solid"
@@ -208,6 +228,7 @@ export default function Controls({
           >
             End Conversation
           </Button>
+
           <Button
             onClick={setSystemPrompt}
             variant="solid"
@@ -217,13 +238,14 @@ export default function Controls({
           >
             <Send className="mr-2 h-4 w-4" /> Update Prompt
           </Button>
+
           <Button
             onClick={handleSearch}
             variant="solid"
             className="text-white hover:cursor-pointer"
             disabled={isSearching}
           >
-            <Search className="mr-2 h-4 w-4" />{" "}
+            <Search className="mr-2 h-4 w-4" />
             {isSearching ? "Searching..." : "Web Search"}
           </Button>
         </div>
