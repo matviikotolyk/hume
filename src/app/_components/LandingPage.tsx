@@ -229,7 +229,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
             </Box>
 
             {/* File Manager with adaptive height */}
-            <Box className="h-[300px] overflow-y-auto rounded-md bg-transparent lg:h-[calc(100vh-400px)]">
+            <Box className="h-auto overflow-y-auto rounded-md bg-transparent lg:h-[calc(100vh-400px)]">
               <FileManager
                 uploadedFiles={uploadedFiles}
                 selectedFile={selectedFile}
@@ -244,7 +244,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
               auth={{ type: "accessToken", value: accessToken }}
               configId="a4f9ef27-e28e-470f-81f4-d815d0437195"
             >
-              <Box className="h-[400px] rounded-md border border-gray-300 bg-[#F5F5F5] lg:h-[calc(100vh-300px)]">
+              <Box className="h-[300px] rounded-md border border-gray-300 bg-[#F5F5F5] lg:h-[calc(100vh-300px)]">
                 <Messages selectedFile={selectedFile} />
               </Box>
               <Box className="rounded-md bg-transparent py-4">

@@ -139,7 +139,7 @@ export default function Messages({
   };
 
   return (
-    <Box className="rounded-md bg-[#F5F5F5] p-4">
+    <Box className="rounded-md bg-[#F5F5F5] p-2 md:p-48">
       <ScrollArea
         type="always"
         scrollbars="vertical"
