@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Cross2Icon } from "@radix-ui/react-icons";
 
-const WelcomeModal = () => {
-  const [isOpen, setIsOpen] = useState(true);
+interface WelcomeModalProps {
+  onClose: () => void;
+}
+
+const WelcomeModal = ({ onClose }: WelcomeModalProps) => {
 
   return (
-    <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog.Root open={true} onOpenChange={() => onClose?.()}>
       <Dialog.Portal>
         <Dialog.Overlay className="data-[state=open]:animate-fade-in fixed inset-0 bg-black/20 backdrop-blur-sm" />
         <Dialog.Content className="data-[state=open]:animate-content-show fixed left-1/2 top-1/2 max-h-[85vh] w-[90vw] max-w-[700px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl bg-gradient-to-br from-[#FCCAC4] to-[#FED8B1] p-8 shadow-[0_10px_38px_-10px_hsla(206,22%,7%,.35),0_10px_20px_-15px_hsla(206,22%,7%,.2)] focus:outline-none">
@@ -21,8 +24,8 @@ const WelcomeModal = () => {
               </p>
 
               <p>
-                We&apos;re here to support your emotional wellbeing in two powerful
-                ways:
+                We&apos;re here to support your emotional wellbeing in two
+                powerful ways:
               </p>
 
               <div className="space-y-4">
@@ -61,7 +64,7 @@ const WelcomeModal = () => {
           <div className="mt-4 flex justify-center">
             <Dialog.Close asChild>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={onClose}
                 className="rounded-2xl bg-gradient-to-r from-[#fdbdb6] to-[#f3b373] px-6 py-2 text-[#353535] outline-none transition-all hover:from-[#FBB5AC] hover:to-[#FECF9A]"
               >
                 Let&apos;s Begin

@@ -143,7 +143,7 @@ export default function Messages({
       <ScrollArea
         type="always"
         scrollbars="vertical"
-        style={{ height: "400px" }}
+        style={{ height: "auto" }}
         ref={scrollAreaRef}
         onScroll={handleScroll}
       >

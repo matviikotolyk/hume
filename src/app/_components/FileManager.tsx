@@ -15,12 +15,12 @@ const FileManager: React.FC<FileManagerProps> = ({
 }) => {
   return (
     <Box className="mt-4 rounded-md border border-gray-300 bg-[#F5F5F5] p-4">
-      <Text weight="medium" size="3" style={{ marginBottom: "1rem" }}>
+      <Text weight="medium" size="3">
         Uploaded Files
       </Text>
       <ScrollArea style={{ height: "auto" }}>
         {uploadedFiles.map((file, index) => (
-          <Box key={index} style={{ marginBottom: "1rem" }}>
+          <Box key={index} style={{ marginBottom: "1rem", marginTop: "1rem" }}>
             <Button
               color="blue"
               onClick={() => setSelectedFile(file)}

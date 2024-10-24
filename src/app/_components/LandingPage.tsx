@@ -39,6 +39,18 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const supabase = createClientComponentClient();
   const router = useRouter();
+  const [showModal, setShowModal] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !window.localStorage.getItem("welcomeModal");
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (!showModal) {
+      window.localStorage.setItem("welcomeModal", "true");
+    }
+  }, [showModal]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -93,7 +105,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
           {
             role: "system",
             content:
-              "You are an AI trained to analyze journal entries for emotional sentiment. Provide a brief summary of the emotional state conveyed in the text.",
+              "You are an AI trained to analyze journal entries for emotional sentiment. Provide a brief summary of the emotional state conveyed in the text. Pay attention to details and come up with a complete and accurate summary.",
           },
           {
             role: "user",
@@ -107,7 +119,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
       const analysisChunk = chatCompletion.choices[0]?.message?.content ?? "";
       fullAnalysis += analysisChunk;
 
-      console.log("Llama model output:", analysisChunk);
+      // console.log("Llama model output:", analysisChunk);
     }
 
     return fullAnalysis;
@@ -163,8 +175,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-t from-[#FED8B1] to-[#FCCAC4] py-16">
-      <WelcomeModal />
+    <div className="relative min-h-screen bg-gradient-to-t from-[#FED8B1] to-[#FCCAC4] p-4 sm:py-16">
+      {showModal && <WelcomeModal onClose={() => setShowModal(false)} />}
       <div
         style={{
           position: "fixed",
@@ -188,23 +200,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
         }}
       />
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col gap-6">
+        {/* Header */}
         <Flex
           justify="center"
-          gap={"4"}
           align="center"
-          className="mb-8 px-4 sm:px-6 lg:px-8"
+          className="flex-col gap-4 sm:flex-row"
         >
-          <h1 className="z-10 text-4xl font-bold text-[#353535]">
+          <h1 className="text-center text-2xl font-bold text-[#353535] sm:text-4xl">
             Welcome to Your Mental Health Coach
           </h1>
           <Button onClick={handleSignOut} className="hover:cursor-pointer">
             Sign Out
           </Button>
         </Flex>
-        <Flex className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <Box className="w-1/4 pr-8">
-            <Box className="mb-4 rounded-md border border-gray-300 bg-[#F5F5F5] p-4">
+
+        {/* Main content as a column on mobile */}
+        <Flex className="mx-auto w-full max-w-7xl flex-col gap-6 lg:flex-row lg:gap-8">
+          {/* File Upload Section */}
+          <Box className="flex w-full flex-col gap-4 lg:w-1/4">
+            <Box className="rounded-md border border-gray-300 bg-[#F5F5F5] p-4">
               <FileUpload onFileProcessed={handleFileProcessed} />
               {isLoading && (
                 <p className="mt-2 text-blue-500">
@@ -212,7 +227,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
                 </p>
               )}
             </Box>
-            <Box className="h-[calc(100vh-400px)] overflow-y-auto">
+
+            {/* File Manager with adaptive height */}
+            <Box className="h-[300px] overflow-y-auto rounded-md bg-transparent lg:h-[calc(100vh-400px)]">
               <FileManager
                 uploadedFiles={uploadedFiles}
                 selectedFile={selectedFile}
@@ -220,15 +237,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
               />
             </Box>
           </Box>
-          <Box className="w-2/4 px-8">
+
+          {/* Messages and Controls Section */}
+          <Box className="flex w-full flex-col gap-4 lg:w-2/4">
             <VoiceProvider
               auth={{ type: "accessToken", value: accessToken }}
               configId="a4f9ef27-e28e-470f-81f4-d815d0437195"
             >
-              <Box className="mb-4 h-[calc(100vh-300px)] rounded-md border border-gray-300 bg-[#F5F5F5] p-4">
+              <Box className="h-[400px] rounded-md border border-gray-300 bg-[#F5F5F5] lg:h-[calc(100vh-300px)]">
                 <Messages selectedFile={selectedFile} />
               </Box>
-              <Box className="rounded-md bg-transparent">
+              <Box className="rounded-md bg-transparent py-4">
                 <Controls
                   selectedFile={selectedFile}
                   onSearchResults={setSearchResults}
@@ -236,16 +255,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ accessToken }) => {
               </Box>
             </VoiceProvider>
           </Box>
-          <Box className="w-1/4 pl-8">
-            <SearchResults results={searchResults} />
+
+          {/* Search Results Section */}
+          <Box className="w-full lg:w-1/4">
+            <Box className="h-[300px] overflow-y-auto rounded-md">
+              <SearchResults results={searchResults} />
+            </Box>
           </Box>
         </Flex>
-        <Box
-          style={{ paddingLeft: "4rem", paddingRight: "4rem" }}
-          className="mt-8 w-full justify-center"
-        >
-          {/* <ChatHistory /> */}
-        </Box>
       </div>
     </div>
   );
