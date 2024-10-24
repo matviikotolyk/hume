@@ -1,3 +1,4 @@
+import "./_lib/polyfills";
 import "~/styles/globals.css";
 import "@radix-ui/themes/styles.css";
 import { Theme } from "@radix-ui/themes";
