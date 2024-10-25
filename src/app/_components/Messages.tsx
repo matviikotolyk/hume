@@ -67,6 +67,8 @@ export default function Messages({
     return PROSODY_COLORS[prosodyType] ?? "gray";
   };
 
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
   const getTopProsodyScores = (
     scores: ProsodyScores["scores"] = {},
   ): EmotionScore[] => {
@@ -145,7 +147,7 @@ export default function Messages({
         scrollbars="vertical"
         style={{
           height: "auto",
-          maxHeight: window.innerWidth < 768 ? "300px" : "460px",
+          maxHeight: isMobile ? "300px" : "460px",
         }}
         ref={scrollAreaRef}
         onScroll={handleScroll}
