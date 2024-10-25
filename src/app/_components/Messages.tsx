@@ -139,11 +139,14 @@ export default function Messages({
   };
 
   return (
-    <Box className="rounded-md bg-[#F5F5F5] p-2 md:p-48">
+    <Box className="rounded-md bg-[#F5F5F5] p-2 md:p-4">
       <ScrollArea
         type="always"
         scrollbars="vertical"
-        style={{ height: "auto" }}
+        style={{
+          height: "auto",
+          maxHeight: window.innerWidth < 768 ? "300px" : "460px",
+        }}
         ref={scrollAreaRef}
         onScroll={handleScroll}
       >
